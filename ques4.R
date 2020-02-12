@@ -8,23 +8,37 @@ library(corrplot) # for correlation plot
 library(Hmisc)
 library(ggplot2) # for plots
 library(ggthemes)
-
-sum(is.na(data$horsepower))
-data[data$horsepower == "?"] <- NA
+install.packages("corrplot")
+library(corrplot)
 # Assigning dataframe to the data variable
 data <- read.csv("Auto.csv")
+
 # Checking the data 
 View(data) # There are some cases where "?" are present in the data. We need to remove them 
+
 # we will first replace all "?" with "NA" and then remove all NA.
 data[data == "?"] <- NA
+
 # counting number of NA
 sum(is.na(data)) # there are five instances of misisng values.
+
 # removing all the missing values.
 data <- na.omit(data)
+
 View(data)	
 # dataframe is now free of all missing values.
 
 # (b)
+
+# for quantitative we can write
+is.numeric(datasetname$variablename)
+# for qualitative we can write
+is.factor(datasetname$variablename)
+
+# Initially, mpg,cylinders, displacement, weight,acceleration, year, origin are numeric
+# Horsepower and name are factors.
+
+# Now by doing analysis finally whether variables are quantitative or qualitative is decided. 
 
 # mpg. How to check it?
 psych::describe(data$mpg) # mean and median both are close to one another indicating near normal distribution.
@@ -57,6 +71,7 @@ range(data$displacement) # we cannot define displacement in less no of defined l
 table(data$horsepower) # It would be wise to convert it into quantitative since we cannot segregagte the horsepower
 # into less number of defined levels.
 # Hence it should be quantitative. Again performing mathematical operations on the horsepower will hold some relevance.
+data$horsepower <- as.numeric(data$horsepower)
 
 # weight. How to check it?
 psych::describe(data$weight)
@@ -144,11 +159,11 @@ boxplot(data$weight ~ data$cylinders, data=data, main="Effect of cylinders on th
 
 # lets analyze relation between no of cylinders and miles per gallon
 
-boxplot(data$mpg ~ data$cylinders, data=data, main="Effect of cylinders on the miles per gallon", xlab="No of cylinders", ylab="mpg",col=c("orange", "lightblue4"))
-# from the boxplots we see that as no of cylinders increase the weight of the vehicle also increases.
+boxplot(data$mpg ~ data$origin, data=data, main="Relation between origin & miles per gallon", xlab="Origin", ylab="mpg",col=c("orange", "lightblue4"))
+# From the boxplots we see that vehicles with origin 3 have mpg greater than those with origin 2 and origin 1.
 
 # lets analyze the relation between horsepower and miles per gallon
- 
+
 relation1 <- lm(mpg ~ horsepower , data = data)
 plot(data$mpg ~ data$horsepower, col="lightgray", main="Relationship between mpg & horsepower", xlab="Horsepower", ylab="Miles per gallon", pch=16)
 abline(relation1, col = "coral" , lwd = 2.5)
@@ -164,15 +179,35 @@ abline(relation2, col = "coral" , lwd = 2.5)
 # from the plot we can say that as weight of vehicle increases mpg decreases.
 # this means that heavy vehicles are not fuel efficient.
 
+relation3 <- lm(mpg ~ acceleration , data = data)
+plot(data$mpg ~ data$acceleration, col="lightgray", main="Relationship between mpg & acceleration", xlab="Acceleration", ylab="Miles per gallon", pch=16)
+abline(relation3, col = "coral" , lwd = 2.5)
+
+# from the plots we see that miles per gallon increseases as acceleration increases.   
 
 # g
 
-model <- lm(mpg ~ cylinders+displacement+horsepower+weight+acceleration, data= new)
+# By looking at the plots we created in part f, we can say that displacement, weight, horsepower, cylinders, year 
+# acceleration,year can be used to predict the mpg. But not sure.
+# lets use regression to determine best predictors
+
+model <- lm(mpg ~ cylinders+displacement+horsepower+weight+acceleration+year+origin,data = data)
 model
 summary(model)
 
 par(mfrow=c(2,2))
 plot(model)
+# we do see some outliers. Lets remove them and plot a new model.
 
-outliers <- c(387, 323, 330, 149, 275 , 328)
+
+outliers <- c(387, 323, 328, 275, 245)
 new <- data[-outliers,]
+
+
+# now only variables have highest significance i.e '***' are selected. Since They are the strongest predictors 
+# of the mpg. For the other factor variables we were getting high significance for only some levels. So we 
+# completely removed it.
+
+model1 <- lm(mpg ~ weight+year+origin, data= new)
+summary(model1)
+
