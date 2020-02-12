@@ -2,12 +2,17 @@ library(dplyr) # data aggregates
 library(gplots) # plot means with CI 
 
 #a
+College = read.csv("College.csv")
+dummy = read.csv("College.csv")
 str(College)
+
 #There are a total of 777 observations of 19 variables
-describe(college)
+
 #b
+
 rownames (College) -> College [,1]
-College = subset(College, select = -c(X1) )
+College = subset(College, select = -c(X) )
+
 #c
 
 summary(College$Apps)
@@ -63,49 +68,63 @@ summary(College$Grad.Rate)
 #Mean(65.46) is close to median(65).It is close to being normally distributed.Range is 10 to 118
 
 #d.
-acceptRate1<-(College1$Accept/College1$Apps)
-College1 <- cbind(College1, acceptRate1)
+acceptRate<-(College$Accept/College$Apps)
+College <- cbind(College, acceptRate)
+dummy <- cbind(dummy, acceptRate)
 
 #e.
-College1 <- College1[order( -acceptRate1),]
+# By most selective we mean selecting universities with lowest acceptance rate.
+
+College1 <- dummy[order( acceptRate),]
+top5 <- top_n(College1,-5)
+
+# Now we print five most selective public institutions.
+# Step 1: First subsetting only public institutions.
+
+College2 <- dummy[which(College$Private == "No"),]
+
+# Step 2: Selecting five most selective
+top5_1 <- top_n(College2,-5)
 
 #f.
+
 table(College1$Private)
-mean(College1$acceptRate1[College1$Private=="Yes"])#0.754
-mean(College1$acceptRate1[College1$Private=="No"])#0.726
+mean(College1$acceptRate[College1$Private=="Yes"])#0.754
+mean(College1$acceptRate[College1$Private=="No"])#0.726
 #Public institutions are more selective on average. Since average acceptance 
 #rate of public universities is 72.6% and private institution is 75.4%
 
 #g.
-matricRate<-College1$Enroll/College1$Accept
-College1 <- cbind(College1, matricRate)
+
+matricRate<-College$Enroll/College$Accept
+College <- cbind(College1, matricRate)
 
 #H.
-plot(College1$Grad.Rate ~ College1$matricRate, col = c("red", "blue"), 
+plot(College$matricRate ~ College$acceptRate, col = c("red", "blue"), 
      main="Relationship of accept rate and enroll rate", 
      xlab="Accepted rate", 
      ylab=" Matric Rate", 
      pch=16) 
-abline(lm(College1$Grad.Rate ~ College1$matricRate), col="coral", lwd=2.5)
-lines(lowess(College1$Grad.Rate ~ College1$matricRate), col="green", lwd=2.5) # Smoother is the line similar to regression line, indicating a linear relationship
+abline(lm(College$matricRate ~ College$acceptRate), col="coral", lwd=2.5)
+lines(lowess(College1$Grad.Rate ~ College1$matricRate), col="green", lwd=2.5) 
 legend("topright", fill= c("red","blue"),
        legend = c("Private", "Public"), 
        col = par("col"))
-       
+
 
 #I.
-acc1 <- College1$acceptRate1[College1$Private=="Yes"]
-mat1 <- College1$matricRate[College1$Private=="Yes"]
+acc1 <- College$acceptRate[College$Private=="Yes"]
+mat1 <- College$matricRate[College$Private=="Yes"]
 
-acc2 <- College1$acceptRate1[College1$Private=="No"]
-mat2 <- College1$matricRate[College1$Private=="No"]
+acc2 <- College$acceptRate[College$Private=="No"]
+mat2 <- College$matricRate[College$Private=="No"]
 
 install.packages('corrplot')
 library(corrplot)
 cor.test(acc1,mat1)
-#correlation between acceptance rate and matriculation of private institution is weakly correlated.cor=0.0019
+#correlation between acceptance rate and matriculation of private institution is weakly correlated.cor=0.04
 cor.test(acc2,mat2)
-#correlation between acceptance rate and matriculation of public institution is moderately correlated.cor=0.35
+#correlation between acceptance rate and matriculation of public institution is weakly negatively correlated.cor= -0.064
 
 
 #J
@@ -113,20 +132,26 @@ library(car) # advanced scatter plots
 
 scatterplotMatrix(~Apps+Accept+Enroll+Top10perc+Top25perc+F.Undergrad+P.Undergrad+Outstate+Room.Board+Books, data=College1, main="Correlations of Numeric Variables in the College Data")
 #
+
 #K
+
 boxplot(College1$Outstate~College1$Private, col = c("green", "orange") )#public institutions has few outliers above upper threshold, and private institutions
 #has very few outliers above upper threshold
 legend("topright", fill= c("green","orange"),
        legend = c("Public", "Private"), 
        col = par("col"))
-
+# We move along each row from left to right, to find relationship between the two variables.
+# For example in case of Apps and Accept, the plot at position 1*2 represents the relations between the two.
+# If the plot shows an uphill pattern from left to right, this indicates a positive relation.
+# If the plot shows a downhill pattern from left to right, this indicates a negative relation.
+# if the plot doesn't show any kind of pattern then no relationship exists.
 
 #L
-Elite<- rep ("No",nrow(College1))
+Elite<- rep ("No",nrow(College))
 #Elite is the variable created. rep replicates the values in stated in first argument.(ie. No). the second argument is 
 #number of times, which is Number of rows in this case.
 
-Elite[College1$Top10perc > 50] <- "Yes"
+Elite[College$Top10perc > 50] <- "Yes"
 #Above code is used for binning Top 10 perc in two categories ie. above and below 50%. High school exceeding 50% is categorized to Yes
 #Below 50% is categorized to NO
 
@@ -147,8 +172,17 @@ legend("topright", fill= c("darkblue","maroon"),
 
 
 #M
+
 par(mfrow=c(2,2))
+
 hist(College1$Apps, col=c("steelblue", "red"), freq=F) 
+hist(College1$Apps, col=c("steelblue", "red"), freq=F, breaks = 6) 
+
 hist(College1$Accept, col=c("steelblue", "red"), freq=F) 
-hist(College1$Enroll, col=c("steelblue", "red"), freq=F) 
+hist(College1$Accept, col=c("steelblue", "red"), freq=F, breaks = 6) 
+
+hist(College1$Enroll, col=c("steelblue", "red"), freq=F)
+hist(College1$Enroll, col=c("steelblue", "red"), freq=F, breaks = 6)
+
 hist(College1$PhD, col=c("steelblue", "red"), freq=F) 
+hist(College1$PhD, col=c("steelblue", "red"), freq=F, breaks = 6) 
